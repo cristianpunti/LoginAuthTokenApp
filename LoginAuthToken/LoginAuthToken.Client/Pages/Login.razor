@@ -1,0 +1,92 @@
+﻿@page "/"
+@using System.Net.Http.Json
+@using LoginAuthToken.Client.Models
+@using System.Xml.Linq
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div id="animated-background"></div>
+
+<div class="login-container">
+    <div class="login-card">
+        <h1 class="mb-3">Welcome!</h1>
+        <p>Enter your IP to connect to the project:</p>
+
+
+        <EditForm Model="LoginReq" OnValidSubmit="HandleLogin" FormName="LoginForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group mb-3">
+                <label for="ipInput" class="form-label">IP:</label>
+                <InputText id="ipInput" @bind-Value="LoginReq.Ip" class="form-control" placeholder="Ej: 192.168.1.10" />
+                <ValidationMessage For="() => LoginReq.Ip" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Connect</button>
+
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="text-danger mt-2">@errorMessage</p>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private IpConfig LoginReq { get; set; } = new();
+
+    private string? errorMessage;
+    private bool _isBrowser;
+    public bool Valid { get; set; }
+    [Inject] private ILogger<Login> Logger { get; set; } = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("trianglifyHelper.generarCanvas", new
+                {
+                    width = 800,
+                    height = 600,
+                    cellSize = 75,
+                    variance = 0.75,
+                    xColors = "random",
+                    yColors = "match"
+                }, "animated-background");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Error trianglify: " + ex.Message);
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(LoginReq.Ip))
+        {
+            errorMessage = "Debes introducir una IP válida.";
+            return;
+        }
+
+        var response = await Http.PostAsJsonAsync("api/IpConfig/validate", new IpConfig { Ip = LoginReq.Ip });
+        var result = await response.Content.ReadFromJsonAsync<ValidateIpResult>();
+
+        if (result == null || !result.Valid)
+        {
+            errorMessage = "IP no autorizada.";
+            return;
+        }
+        Navigation.NavigateTo($"/counter/{LoginReq.Ip}");
+    }
+
+   
+}

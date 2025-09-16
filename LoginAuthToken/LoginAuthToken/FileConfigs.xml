@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<IpConfigs>
+	<IpConfig>
+		<Ip>192.168.1.10</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.11</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.12</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.13</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.14</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.15</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.16</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.17</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.18</Ip>
+	</IpConfig>
+	<IpConfig>
+		<Ip>192.168.1.19</Ip>
+	</IpConfig>
+</IpConfigs>

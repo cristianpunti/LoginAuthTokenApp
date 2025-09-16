@@ -1,0 +1,47 @@
+﻿/* Animated background (fallback) */
+#animated-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    background: linear-gradient(-45deg, #22C8F6, #189932, #ffdd33, #ff6b6b);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+}
+
+/* If using Trianglify, the generated SVG will have this id (#trianglify-overlay).
+   This style ensures it stays behind content and covers the entire screen. */
+#trianglify-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none; /* so it does not interfere with clicks */
+}
+
+/* Animation */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Basic page reset */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+}

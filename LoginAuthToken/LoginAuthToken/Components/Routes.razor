@@ -1,0 +1,14 @@
+﻿@using LoginAuthToken.Components.Pages
+@using LoginAuthtoken
+<Router AppAssembly="typeof(Program).Assembly"
+        AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+     <NotFound>
+        <NotFoundPage>
+            <p>Página no encontrada</p>
+        </NotFoundPage>
+    </NotFound>
+</Router>

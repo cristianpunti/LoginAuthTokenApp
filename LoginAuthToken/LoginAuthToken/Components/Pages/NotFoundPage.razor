@@ -1,0 +1,18 @@
+﻿@page "/notfound"
+
+<PageTitle>NotFoundPage</PageTitle>
+
+<div class="d-flex flex-column justify-content-center align-items-center vh-100 text-center">
+    <h1 class="display-3 text-danger">404</h1>
+    <p class="lead">Lo sentimos, la página que buscas no existe.</p>
+    <button class="btn btn-primary mt-3" @onclick="GoHome">Volver al inicio</button>
+</div>
+
+@code {
+    [Inject] NavigationManager Navigation { get; set; } = default!;
+
+    private void GoHome()
+    {
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}
