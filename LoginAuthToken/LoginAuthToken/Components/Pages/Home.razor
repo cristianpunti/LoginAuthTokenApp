@@ -1,7 +1,26 @@
-﻿@* @page "/"
+﻿@page "/home/{ip}"
 
-<PageTitle>Home</PageTitle>
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
-<h1>Hello, world!</h1>
+@inject NavigationManager Navigation
 
-Welcome to your new app. *@
+@* <PageTitle>Home</PageTitle>
+ *@
+<p>IP recibida por header: @ip</p>
+
+Welcome to your new app.
+
+<div class="mb-3">
+    <button class="btn btn-secondary" @onclick="Logout">Logout</button>
+</div>
+
+
+@code{
+
+    [Parameter] public string? ip { get; set; }
+    private void Logout()
+    {
+        Navigation.NavigateTo("/", forceLoad: true);
+
+    }
+}

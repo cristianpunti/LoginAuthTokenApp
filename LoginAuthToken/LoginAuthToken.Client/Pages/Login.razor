@@ -1,10 +1,15 @@
 ﻿@page "/"
 @using System.Net.Http.Json
+@using LoginAuthToken.Client.Layout
 @using LoginAuthToken.Client.Models
 @using System.Xml.Linq
+
+@layout EmptyLayout
+
 @inject IJSRuntime JS
 @inject HttpClient Http
 @inject NavigationManager Navigation
+
 
 <div id="animated-background"></div>
 
@@ -41,6 +46,8 @@
 
     private string? errorMessage;
     private bool _isBrowser;
+    private string? ipToStore;
+
     public bool Valid { get; set; }
     [Inject] private ILogger<Login> Logger { get; set; } = default!;
 
@@ -59,6 +66,17 @@
                     xColors = "random",
                     yColors = "match"
                 }, "animated-background");
+
+                // // Guardar IP en localStorage solo si hay una pendiente
+                // if (!string.IsNullOrEmpty(ipToStore))
+                // {
+                //     await JS.InvokeVoidAsync("clientStorage.setIp", ipToStore);
+                //     Logger.LogInformation("[Login] IP guardada en localStorage: " + ipToStore);
+
+                //     ipToStore = null; // Reset para no ejecutar de nuevo
+                // }
+
+               
             }
             catch (Exception ex)
             {
@@ -85,8 +103,17 @@
             errorMessage = "IP no autorizada.";
             return;
         }
-        Navigation.NavigateTo($"/counter/{LoginReq.Ip}");
-    }
 
-   
+        // Guardar la IP en localStorage de forma segura
+        // ipToStore = LoginReq.Ip;
+
+        Logger.LogInformation("[Login] IP guardada: " + LoginReq.Ip);
+        await Http.PostAsJsonAsync("api/IpConfig/save", LoginReq);
+
+        // Redirigir a Home con la IP
+     //   await InvokeAsync(() => Navigation.NavigateTo($"/home/{LoginReq.Ip}"));
+        await InvokeAsync(() => Navigation.NavigateTo($"/home/{LoginReq.Ip}"));
+        
+      //  await InvokeAsync(() => Navigation.NavigateTo($"/home?ip={LoginReq.Ip}"));
+    }
 }

@@ -17,6 +17,20 @@ namespace LoginAuthToken.Server.Controllers
             _logger = logger;
         }
 
+        // POST: api/IpConfig/save
+        [HttpPost("save")]
+        public IActionResult SaveIp([FromBody] IpConfig input)
+        {
+            if (input == null || string.IsNullOrWhiteSpace(input.Ip))
+                return BadRequest(new { Success = false });
+
+            // Guardar en session
+            HttpContext.Session.SetString("ClientIp", input.Ip);
+            _logger.LogInformation("IP guardada en session: {Ip}", input.Ip);
+
+            return Ok(new { Success = true });
+        }
+
         [HttpGet]
         public IActionResult Get()
         {

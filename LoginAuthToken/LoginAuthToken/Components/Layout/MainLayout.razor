@@ -1,4 +1,13 @@
-﻿@inherits LayoutComponentBase
+﻿@using LoginAuthToken.Client.Models
+@using System.Net.Http.Json
+
+@inherits LayoutComponentBase
+
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IHttpContextAccessor HttpContextAccessor
+@inject HttpClient Http
+
 
 <div class="page">
     <div class="sidebar">
@@ -6,8 +15,12 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
+       @*  <div class="top-row px-4">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div> *@
+
+        <div class="top-row px-4" style="display:flex; justify-content:flex-end;">
+            <span>IP: @(string.IsNullOrEmpty(ip) ? "No disponible" : ip)</span>
         </div>
 
         <article class="content px-4">
@@ -21,3 +34,17 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private string? ip;
+    [SupplyParameterFromForm]
+    private IpConfig ? LoginReq { get; set; }
+
+   
+    
+
+    protected override void OnInitialized()
+    {
+        ip = HttpContextAccessor.HttpContext?.Session.GetString("ClientIp");
+    }
+}

@@ -31,7 +31,7 @@ namespace LoginAuthToken
         {
             if (authenticationStateTask is null)
             {
-                throw new UnreachableException($"Authentication state not set in {nameof(OnPersistingAsync)}().");
+                return;
             }
 
             var authenticationState = await authenticationStateTask;

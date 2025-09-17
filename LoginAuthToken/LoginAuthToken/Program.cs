@@ -2,10 +2,8 @@ using LoginAuthToken;
 using LoginAuthToken.Components;
 using LoginAuthToken.Server.Services;
 
-//using LoginWithoutIdenty.Server.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
-//using Microsoft.EntityFrameworkCore;
 
 namespace LoginAuthtoken
 {
@@ -64,6 +62,23 @@ namespace LoginAuthtoken
             builder.Logging.AddConsole();
 #endif
 
+            builder.Services.AddServerSideBlazor()
+           .AddCircuitOptions(options =>
+           {
+               options.DetailedErrors = true;
+               options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+           });
+
+            builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddDistributedMemoryCache(); // Necesario para almacenar session en memoria
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // Tiempo que dura la sesión
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
+
             var app = builder.Build();
 
 
@@ -86,6 +101,7 @@ namespace LoginAuthtoken
 
             app.UseRouting();
 
+            app.UseSession();
 
             // Registrar LoggerFactory
             //builder.Services.AddSingleton<ILoggerFactory, LoggerFactory>();

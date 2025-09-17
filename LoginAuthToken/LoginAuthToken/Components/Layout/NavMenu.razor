@@ -1,6 +1,12 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">LoginAuthToken</a>
+        <!-- Logo que navega según la IP -->
+        <a class="navbar-brand" href="#" @onclick="OnLogoClick" @onclick:preventDefault style="cursor:pointer;">
+            LoginAuthToken
+        </a>
     </div>
 </div>
 
@@ -9,22 +15,37 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
+            <NavLink class="nav-link" href="@($"/counter/{Ip}")">
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
             </NavLink>
         </div>
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
+            <NavLink class="nav-link" href="@($"/weather/{Ip}")">
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
     </nav>
 </div>
 
+@code {
+    [Parameter] public string? Ip { get; set; }
+
+    private void OnLogoClick()
+    {
+        if (string.IsNullOrEmpty(Ip))
+            return; // No hacemos nada si no hay IP
+
+        var currentUri = Navigation.Uri;
+
+        // Construimos la URL de Home con la IP
+        var homeUrl = Navigation.BaseUri + $"home/{Ip}";
+
+        // Si no estamos ya en Home, redirigimos
+        if (!currentUri.EndsWith(homeUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            Navigation.NavigateTo($"/home/{Ip}");
+        }
+        // Si ya estamos en Home, no hacemos nada
+    }
+}
