@@ -7,8 +7,6 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
      <NotFound>
-        <NotFoundPage>
-            <p>Página no encontrada</p>
-        </NotFoundPage>
+        <RedirectToErrorPage ErrorCode="404" />
     </NotFound>
 </Router>

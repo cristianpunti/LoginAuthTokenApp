@@ -1,5 +1,8 @@
-﻿@page "/counter"
+﻿@* @page "/counter"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using LoginAuthToken.Services
+
+@inject UserSessionService UserSession
 
 @inject NavigationManager Navigation
 
@@ -18,4 +21,14 @@
     {
         currentCount++;
     }
+
+    protected override void OnInitialized()
+    {
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/error/401", forceLoad: true);
+        }
+    }
+
 }
+ *@

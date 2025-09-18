@@ -1,10 +1,12 @@
-﻿@inject NavigationManager Navigation
+﻿@using LoginAuthToken.Services
+@inject NavigationManager Navigation
+@inject UserSessionService UserSession
 @inject IJSRuntime JS
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <!-- Logo que navega según la IP -->
-        <a class="navbar-brand" href="#" @onclick="OnLogoClick" @onclick:preventDefault style="cursor:pointer;">
+        <a class="navbar-brand" href="" @onclick="OnLogoClick" @onclick:preventDefault style="cursor:pointer;">
             LoginAuthToken
         </a>
     </div>
@@ -30,22 +32,19 @@
 
 @code {
     [Parameter] public string? Ip { get; set; }
+    
 
     private void OnLogoClick()
     {
-        if (string.IsNullOrEmpty(Ip))
-            return; // No hacemos nada si no hay IP
-
-        var currentUri = Navigation.Uri;
-
-        // Construimos la URL de Home con la IP
-        var homeUrl = Navigation.BaseUri + $"home/{Ip}";
-
-        // Si no estamos ya en Home, redirigimos
-        if (!currentUri.EndsWith(homeUrl, StringComparison.OrdinalIgnoreCase))
+        if (UserSession.IsLoggedIn && !string.IsNullOrEmpty(UserSession.ClientIp))
         {
-            Navigation.NavigateTo($"/home/{Ip}");
+            // Usuario logeado → redirigir a Home con su IP
+            Navigation.NavigateTo($"/home/{UserSession.ClientIp}");
         }
-        // Si ya estamos en Home, no hacemos nada
+        else
+        {
+            // Usuario no logeado → ir a Login
+            Navigation.NavigateTo("/");
+        }
     }
 }

@@ -19,6 +19,9 @@
         {
             return OnChange?.Invoke() ?? Task.CompletedTask;
         }
+
+        public bool IsLoggedIn => !string.IsNullOrEmpty(_clientIp);
+
     }
 
 }

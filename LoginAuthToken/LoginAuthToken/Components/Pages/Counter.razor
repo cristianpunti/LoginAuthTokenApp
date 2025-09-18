@@ -1,0 +1,46 @@
+﻿@page "/counter"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using LoginAuthToken.Services
+
+@inject UserSessionService UserSession
+
+@inject NavigationManager Navigation
+
+    @if (!IsAuthorized)
+    {
+        <ErrorPage ErrorCode="401" />
+    }
+    else
+    {
+        <h3>Counter</h3>
+
+        <p>Current count: @currentCount</p>
+
+        <div class="mb-3">
+            <button class="btn btn-primary me-2" @onclick="IncrementCount">Click me</button>
+        </div>
+    }
+
+@code {
+    [Parameter] public string? ip { get; set; }
+
+    private bool IsAuthorized;
+
+    private int currentCount = 0;
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+  
+
+    protected override void OnInitialized()
+    {
+        // Solo comprobamos si está logado
+        IsAuthorized = UserSession.IsLoggedIn;
+    }
+
+
+
+}

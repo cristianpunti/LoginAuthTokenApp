@@ -1,26 +1,52 @@
 ﻿@page "/home/{ip}"
+@using LoginAuthToken.Services
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@inject UserSessionService UserSession
 
 @inject NavigationManager Navigation
 
-@* <PageTitle>Home</PageTitle>
- *@
-<p>IP recibida por header: @ip</p>
 
-Welcome to your new app.
+    @if (!IsAuthorized)
+    {
+        <ErrorPage ErrorCode="401" />
+    }
+    else
+    {
+        <p>IP recibida por header: @ip</p>
+        <h2>Welcome to your new app.</h2>
 
-<div class="mb-3">
-    <button class="btn btn-secondary" @onclick="Logout">Logout</button>
-</div>
 
+        <div class="mb-3">
+            <button class="btn btn-secondary" @onclick="Logout">Logout</button>
+        </div>
+    }
 
 @code{
 
     [Parameter] public string? ip { get; set; }
+    private bool IsAuthorized;
+
+    protected override void OnParametersSet()
+    {
+        // Usuario logado?
+        if (!UserSession.IsLoggedIn)
+        {
+            IsAuthorized = false;
+            return;
+        }
+
+        // IP de URL coincide con IP logada?
+        IsAuthorized = ip == UserSession.ClientIp;
+    }
     private void Logout()
     {
-        Navigation.NavigateTo("/", forceLoad: true);
+        UserSession.ClientIp = null;
+        IsAuthorized = false;
 
+        StateHasChanged(); // fuerza re-render de la página actual
+        Navigation.NavigateTo("/", forceLoad: true);
+       
+   
     }
 }

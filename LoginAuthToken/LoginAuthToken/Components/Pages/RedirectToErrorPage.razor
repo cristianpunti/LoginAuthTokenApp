@@ -1,0 +1,10 @@
+﻿@inject NavigationManager Navigation
+@code {
+    [Parameter] public int ErrorCode { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo($"/error/{ErrorCode}", forceLoad: true);
+    }
+}
+

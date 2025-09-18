@@ -1,0 +1,42 @@
+﻿@page "/error/{ErrorCode:int?}"
+@inject NavigationManager Navigation
+
+<div class="d-flex flex-column justify-content-center align-items-center vh-100 text-center">
+    <h1 class="display-3 text-danger">@Title</h1>
+    <p class="lead">@Message</p>
+    <button class="btn btn-primary mt-3" @onclick="GoLogin">Go back to login</button>
+</div>
+
+@code {
+    [Parameter] public int? ErrorCode { get; set; }
+
+    private string Title = "Error";
+    private string Message = "An error has occurred.";
+
+
+    protected override void OnInitialized()
+    {
+        switch (ErrorCode)
+        {
+            case 404:
+                Title = "404 - Not Found";
+                Message = "The page you are looking for does not exist.";
+                break;
+            case 401:
+                Title = "401 - Unauthorized";
+                Message = "You do not have permission to access this page.";
+                break;
+            default:
+                Title = "Error";
+                Message = "An error has occurred.";
+                break;
+        }
+
+    }
+
+    private void GoLogin()
+    {
+        StateHasChanged(); // fuerza re-render de la página actual
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}
