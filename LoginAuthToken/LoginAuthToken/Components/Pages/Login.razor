@@ -3,6 +3,7 @@
 @using LoginAuthToken.Client.Layout
 @using LoginAuthToken.Client.Models
 @using System.Xml.Linq
+@using LoginAuthToken.Services
 
 @layout EmptyLayout
 
@@ -50,6 +51,7 @@
 
     public bool Valid { get; set; }
     [Inject] private ILogger<Login> Logger { get; set; } = default!;
+    [Inject] private UserSessionService UserSession { get; set; } = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -87,7 +89,6 @@
 
     private async Task HandleLogin()
     {
-        errorMessage = null;
 
         if (string.IsNullOrWhiteSpace(LoginReq.Ip))
         {
@@ -104,16 +105,16 @@
             return;
         }
 
-        // Guardar la IP en localStorage de forma segura
-        // ipToStore = LoginReq.Ip;
+        // Guardar en servicio local
+        UserSession.ClientIp = LoginReq.Ip;
+        Logger.LogInformation("IP guardada en UserSession: " + LoginReq.Ip);
 
-        Logger.LogInformation("[Login] IP guardada: " + LoginReq.Ip);
-        await Http.PostAsJsonAsync("api/IpConfig/save", LoginReq);
+        // Guardar también en Session del servidor
+        await Http.PostAsJsonAsync("api/IpConfig/save", new IpConfig { Ip = LoginReq.Ip });
 
-        // Redirigir a Home con la IP
-     //   await InvokeAsync(() => Navigation.NavigateTo($"/home/{LoginReq.Ip}"));
+        // Redirigir
         await InvokeAsync(() => Navigation.NavigateTo($"/home/{LoginReq.Ip}"));
+       
         
-      //  await InvokeAsync(() => Navigation.NavigateTo($"/home?ip={LoginReq.Ip}"));
     }
 }

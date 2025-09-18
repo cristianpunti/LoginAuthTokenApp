@@ -1,7 +1,7 @@
 using LoginAuthToken;
 using LoginAuthToken.Components;
 using LoginAuthToken.Server.Services;
-
+using LoginAuthToken.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -24,7 +24,7 @@ namespace LoginAuthtoken
             //    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Construir la ruta absoluta del XML
-            var xmlPath = Path.Combine(builder.Environment.ContentRootPath, "FileConfigs.xml");
+            var xmlPath = Path.Combine(builder.Environment.ContentRootPath, "IpConfigs.xml");
 
             // Crear la instancia de IpConfigService y registrarla
             var ipConfigService = new IpConfigService(xmlPath);
@@ -78,6 +78,8 @@ namespace LoginAuthtoken
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
+            builder.Services.AddSingleton<UserSessionService>();
+
 
             var app = builder.Build();
 

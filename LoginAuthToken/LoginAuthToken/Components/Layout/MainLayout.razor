@@ -1,5 +1,6 @@
 ﻿@using LoginAuthToken.Client.Models
 @using System.Net.Http.Json
+@using LoginAuthToken.Services
 
 @inherits LayoutComponentBase
 
@@ -7,6 +8,7 @@
 @inject IJSRuntime JS
 @inject IHttpContextAccessor HttpContextAccessor
 @inject HttpClient Http
+@inject UserSessionService UserSession
 
 
 <div class="page">
@@ -36,15 +38,38 @@
 </div>
 
 @code {
-    private string? ip;
+
     [SupplyParameterFromForm]
     private IpConfig ? LoginReq { get; set; }
+    public string? ip { get; set; }
+
+    [Inject] private ILogger<MainLayout> Logger { get; set; } = default!;
+
+ 
+    protected override async Task OnInitializedAsync()
+    {
+        // Suscribirse a cambios de UserSession
+        UserSession.OnChange += async () => await InvokeAsync(StateHasChanged);
+
+        if (!string.IsNullOrEmpty(UserSession.ClientIp))
+        {
+            ip = UserSession.ClientIp;
+            Logger.LogInformation("MainLayout usa UserSession.ClientIp: " + ip);
+        }
+        else
+        {
+            var result = await Http.GetFromJsonAsync<IpConfig>("api/IpConfig/current");
+            ip = result?.Ip ?? "No disponible";
+            Logger.LogInformation("MainLayout usa Session.Server: " + ip);
+        }
+    }
+
+    public void Dispose()
+    {
+        UserSession.OnChange -= async () => await InvokeAsync(StateHasChanged);
+    }
+
 
    
-    
-
-    protected override void OnInitialized()
-    {
-        ip = HttpContextAccessor.HttpContext?.Session.GetString("ClientIp");
-    }
 }
+

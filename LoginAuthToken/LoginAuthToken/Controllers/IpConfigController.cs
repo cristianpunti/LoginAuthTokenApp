@@ -59,5 +59,18 @@ namespace LoginAuthToken.Server.Controllers
 
             return Ok(new { Valid = valid });
         }
+
+        [HttpGet("current")]
+        public IActionResult GetCurrentIp()
+        {
+            var ip = HttpContext.Session.GetString("ClientIp");
+            if (string.IsNullOrEmpty(ip))
+            {
+                return Ok(new { Ip = "" });
+            }
+
+            return Ok(new { Ip = ip });
+        }
+
     }
 }
