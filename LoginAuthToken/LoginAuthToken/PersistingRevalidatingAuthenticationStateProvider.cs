@@ -1,5 +1,5 @@
 ﻿using LoginAuthToken.Client;
-using LoginAuthToken.Client.Models;
+using LoginAuthToken.Client.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -44,7 +44,7 @@ namespace LoginAuthToken
 
                 if (userId != null)
                 {
-                    state.PersistAsJson(nameof(LoginModel), new LoginModel
+                    state.PersistAsJson(nameof(LoginViewModel), new LoginViewModel
                     {
                         Email = userId
                     });

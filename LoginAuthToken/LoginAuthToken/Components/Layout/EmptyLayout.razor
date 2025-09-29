@@ -1,40 +1,17 @@
-﻿@using LoginAuthToken.Client.ViewModels
-@using System.Net.Http.Json
+﻿@inherits LayoutComponentBase
+@using LoginAuthToken.LocalStorage
 @using LoginAuthToken.Services
-
-
-@inherits LayoutComponentBase
-
 @inject UserSessionService sessionService
-@inject ILogger<MainLayout> Logger
-
 
 <div class="page">
-    <div class="sidebar">
-        <ErrorBoundary>
-            <ChildContent>
-                <NavMenu />
-            </ChildContent>
-           @*  <ErrorContent Context="Exception">
-                @{
-                    ErrorContentMessage = Logger.LogError("M");
-                }
-                <div class="error-ui">
-                    @ErrorContentMessage <br />
-                </div>
-            </ErrorContent> *@
-        </ErrorBoundary>
-    </div>
-
     <main>
-
         <div style="background-color: #1A1A5A" class="top-row px-4">
             <div>
-                <div style="display:inline-block; color: white">
+                <div style="display:inline-block;color: white">
                     @sessionService.ClientIp
                 </div>
 
-                <div style="display:inline-block; margin-left:10px;">
+                <div style="display:inline-block;  margin-left:10px;">
                     <LogoutButton @rendermode="InteractiveServer" />
                 </div>
             </div>
@@ -50,7 +27,6 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
-
 @code {
     public string Ip { get; private set; } = "";
 
@@ -63,4 +39,5 @@
 
 
 }
+
 

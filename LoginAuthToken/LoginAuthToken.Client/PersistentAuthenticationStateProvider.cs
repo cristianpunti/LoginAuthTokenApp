@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using LoginAuthToken.Client.Models;
+using LoginAuthToken.Client.ViewModels;
 
 namespace LoginAuthToken.Client
 {
@@ -17,7 +17,7 @@ namespace LoginAuthToken.Client
             _state = state;
 
             // Intentar cargar usuario persistido
-            if (_state.TryTakeFromJson<LoginModel>(nameof(LoginModel), out var userInfo) && userInfo != null)
+            if (_state.TryTakeFromJson<LoginViewModel>(nameof(LoginViewModel), out var userInfo) && userInfo != null)
             {
                 var identity = new ClaimsIdentity(new[]
                 {
@@ -33,7 +33,7 @@ namespace LoginAuthToken.Client
             return Task.FromResult(new AuthenticationState(_user));
         }
 
-        public void MarkUserAsAuthenticated(LoginModel userInfo)
+        public void MarkUserAsAuthenticated(LoginViewModel userInfo)
         {
             var identity = new ClaimsIdentity(new[]
             {
@@ -43,7 +43,7 @@ namespace LoginAuthToken.Client
             _user = new ClaimsPrincipal(identity);
 
             // Persistir explícitamente con tipo
-            _state.PersistAsJson<LoginModel>(nameof(LoginModel), userInfo);
+            _state.PersistAsJson<LoginViewModel>(nameof(LoginViewModel), userInfo);
 
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_user)));
         }
@@ -51,7 +51,7 @@ namespace LoginAuthToken.Client
         public void MarkUserAsLoggedOut()
         {
             _user = new ClaimsPrincipal(new ClaimsIdentity());
-            _state.PersistAsJson<LoginModel>(nameof(LoginModel), null! ); // eliminar persistencia
+            _state.PersistAsJson<LoginViewModel>(nameof(LoginViewModel), null! ); // eliminar persistencia
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_user)));
         }
 

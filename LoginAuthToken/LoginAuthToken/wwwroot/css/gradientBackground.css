@@ -11,6 +11,17 @@
     animation: gradientShift 15s ease infinite;
 }
 
+/* Home specific background */
+.home-background {
+    background-color: white; /* solid white */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+}
+
 /* If using Trianglify, the generated SVG will have this id (#trianglify-overlay).
    This style ensures it stays behind content and covers the entire screen. */
 #trianglify-overlay {
@@ -21,6 +32,8 @@
     height: 100vh;
     z-index: -1;
     pointer-events: none; /* so it does not interfere with clicks */
+    pointer-events: none;
+    background-color: #A0E7E5; /* light blue base color */
 }
 
 /* Animation */

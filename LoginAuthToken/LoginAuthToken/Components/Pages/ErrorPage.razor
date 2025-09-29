@@ -1,42 +1,115 @@
 ﻿@page "/error/{ErrorCode:int?}"
+@using LoginAuthToken.LocalStorage
+@using LoginAuthToken.Services
+@using Microsoft.Extensions.Logging
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 @inject NavigationManager Navigation
+@inject UserSessionService UserSession
+@inject LocalStorageHelper localStorageHelper
+@inject IJSRuntime JS
+@inject ILogger<ErrorPage> Logger
+
 
 <div class="d-flex flex-column justify-content-center align-items-center vh-100 text-center">
     <h1 class="display-3 text-danger">@Title</h1>
     <p class="lead">@Message</p>
-    <button class="btn btn-primary mt-3" @onclick="GoLogin">Go back to login</button>
+    @if (!IsLoggedIn)
+    {
+        <button class="btn btn-primary mt-3" @onclick="GoLogin">Go back to login</button>
+    }
+    else
+    {
+        <button class="btn btn-primary mt-3" @onclick="GoHome">Go to Home</button>
+    }
+
 </div>
 
 @code {
     [Parameter] public int? ErrorCode { get; set; }
+    private string Route => Navigation.ToAbsoluteUri(Navigation.Uri).Query.Contains("route=")
+   ? System.Web.HttpUtility.ParseQueryString(Navigation.ToAbsoluteUri(Navigation.Uri).Query).Get("route") ?? string.Empty
+   : string.Empty;
 
     private string Title = "Error";
     private string Message = "An error has occurred.";
+    private bool IsLoggedIn = false;
 
 
-    protected override void OnInitialized()
+    protected override async Task OnParametersSetAsync()
     {
-        switch (ErrorCode)
+        // Primero miramos la sesión en memoria
+        var inMemoryLogged = !string.IsNullOrEmpty(UserSession?.ClientIp)
+                             && !string.IsNullOrEmpty(UserSession?.Token);
+
+        // Si no hay sesión en memoria, miramos LocalStorage
+        var savedIp = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var savedToken = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        var inStorageLogged = !string.IsNullOrEmpty(savedIp) && !string.IsNullOrEmpty(savedToken);
+
+        // El usuario solo está logado si alguno de los dos es válido
+        IsLoggedIn = inMemoryLogged || inStorageLogged;
+
+        // Código de error
+        var code = ErrorCode ?? 404;
+        switch (code)
         {
             case 404:
                 Title = "404 - Not Found";
-                Message = "The page you are looking for does not exist.";
+                Message = string.IsNullOrEmpty(Route)
+                    ? "The page you are looking for does not exist."
+                    : $"The page '{Route}' you are looking for does not exist.";
                 break;
             case 401:
                 Title = "401 - Unauthorized";
                 Message = "You do not have permission to access this page.";
                 break;
             default:
-                Title = "Error";
-                Message = "An error has occurred.";
+                Title = $"Error {code}";
+                Message = "An unexpected error has occurred.";
                 break;
         }
-
     }
 
-    private void GoLogin()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        StateHasChanged(); // fuerza re-render de la página actual
-        Navigation.NavigateTo("/", forceLoad: true);
+        if (firstRender)
+        {
+            try
+            {
+                // Generate the Trianglify background
+                await JS.InvokeVoidAsync("trianglifyHelper.removeCanvas");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Trianglify generation error: " + ex.Message);
+            }
+        }
+    }
+
+    private async Task GoLogin()
+    {
+        // Limpiar sesión en memoria
+        UserSession.ClientIp = null;
+        UserSession.Token = null;
+
+        // Limpiar también el LocalStorage
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageIpKey);
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        // Redirigir al login
+        Navigation.NavigateTo("/weather", forceLoad: true);
+    }
+
+
+
+    private void GoHome()
+    {
+        if (!string.IsNullOrEmpty(UserSession.ClientIp))
+            Navigation.NavigateTo($"/home/{UserSession.ClientIp}", forceLoad: true);
+        else
+            Navigation.NavigateTo("/weather", forceLoad: true); // fallback
     }
 }

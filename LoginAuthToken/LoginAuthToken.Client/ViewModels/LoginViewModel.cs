@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LoginAuthToken.Client.Models
+namespace LoginAuthToken.Client.ViewModels
 {
-    public class LoginModel
+    public class LoginViewModel
     {
         [Required(ErrorMessage = "Email is Required")]
         [EmailAddress(ErrorMessage = "Invalid Email Format")]

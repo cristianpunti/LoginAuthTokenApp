@@ -2,6 +2,8 @@
 {
     public class UserSessionService
     {
+        public string? Token { get; set; }
+
         private string? _clientIp;
         public string? ClientIp
         {

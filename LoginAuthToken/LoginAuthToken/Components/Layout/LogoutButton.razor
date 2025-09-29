@@ -1,0 +1,23 @@
+﻿@using LoginAuthToken.LocalStorage
+@using LoginAuthToken.Services
+@inject UserSessionService sessionService
+@inject LocalStorageHelper localStorageHelper
+@inject NavigationManager Navigation
+
+<button class="btn btn-danger rounded shadow-sm" @onclick="Logout">
+                                Logout
+</button>
+
+@code {
+    private async Task Logout()
+    {
+        // 🔹 Clear IP from session
+        sessionService.ClientIp = null;
+
+        // 🔹 Clear IP from localStorage
+        await localStorageHelper.RemoveItemAsync("LocalStorageIpKey");
+
+        // Navigate to login
+        Navigation.NavigateTo("/weather", forceLoad: true);
+    }
+}

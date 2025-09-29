@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using LoginAuthToken.Server.Services;
-using LoginAuthToken.Client.Models;
+using LoginAuthToken.Client.ViewModels;
 
 namespace LoginAuthToken.Server.Controllers
 {
@@ -19,7 +19,7 @@ namespace LoginAuthToken.Server.Controllers
 
         // POST: api/IpConfig/save
         [HttpPost("save")]
-        public IActionResult SaveIp([FromBody] IpConfig input)
+        public IActionResult SaveIp([FromBody] IpConfigViewModel input)
         {
             if (input == null || string.IsNullOrWhiteSpace(input.Ip))
                 return BadRequest(new { Success = false });
@@ -49,7 +49,7 @@ namespace LoginAuthToken.Server.Controllers
 
         // POST: api/IpConfig/validate
         [HttpPost("validate")]
-        public IActionResult ValidateIp([FromBody] IpConfig input)
+        public IActionResult ValidateIp([FromBody] IpConfigViewModel input)
         {
             if (input == null || string.IsNullOrWhiteSpace(input.Ip))
                 return BadRequest(new { Valid = false });

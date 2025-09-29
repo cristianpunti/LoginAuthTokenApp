@@ -1,5 +1,5 @@
 ﻿using System.Net.Http.Json;
-using LoginAuthToken.Client.Models;
+using LoginAuthToken.Client.ViewModels;
 
 namespace LoginAuthToken.Client.Services
 {
@@ -12,9 +12,9 @@ namespace LoginAuthToken.Client.Services
             _http = http;
         }
 
-        public async Task<List<IpConfig>> GetIpsAsync()
+        public async Task<List<IpConfigViewModel>> GetIpsAsync()
         {
-            return await _http.GetFromJsonAsync<List<IpConfig>>("api/ipconfig") ?? new();
+            return await _http.GetFromJsonAsync<List<IpConfigViewModel>>("api/ipconfig") ?? new();
         }
     }
 }

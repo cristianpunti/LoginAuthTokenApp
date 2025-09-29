@@ -1,52 +1,55 @@
 ﻿@page "/home/{ip}"
+@using LoginAuthToken.LocalStorage
 @using LoginAuthToken.Services
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @inject UserSessionService UserSession
-
+@inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
+@if (!IsAuthorized)
+{
+    <ErrorPage ErrorCode="401" />
+}
+else
+{
+    <div class="home-background"></div>
 
-    @if (!IsAuthorized)
-    {
-        <ErrorPage ErrorCode="401" />
-    }
-    else
-    {
-        <p>IP recibida por header: @ip</p>
-        <h2>Welcome to your new app.</h2>
+   
+}
 
-
-        <div class="mb-3">
-            <button class="btn btn-secondary" @onclick="Logout">Logout</button>
-        </div>
-    }
-
-@code{
-
+@code {
     [Parameter] public string? ip { get; set; }
     private bool IsAuthorized;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        // Usuario logado?
-        if (!UserSession.IsLoggedIn)
-        {
-            IsAuthorized = false;
-            return;
-        }
+        await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas");
 
-        // IP de URL coincide con IP logada?
-        IsAuthorized = ip == UserSession.ClientIp;
+        // Si UserSession está vacío, leer desde LocalStorage
+        if (string.IsNullOrEmpty(UserSession.ClientIp))
+            UserSession.ClientIp = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+
+        if (string.IsNullOrEmpty(UserSession.Token))
+            UserSession.Token = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        // Verificar autorización: hay token y la IP de la URL coincide
+        IsAuthorized = !string.IsNullOrEmpty(UserSession.Token)
+                       && !string.IsNullOrEmpty(UserSession.ClientIp)
+                       && ip?.Trim() == UserSession.ClientIp?.Trim();
     }
-    private void Logout()
+
+    private async Task Logout()
     {
+        // Limpiar sesión y LocalStorage
         UserSession.ClientIp = null;
+        UserSession.Token = null;
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageIpKey);
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageTokenKey);
+
         IsAuthorized = false;
 
-        StateHasChanged(); // fuerza re-render de la página actual
-        Navigation.NavigateTo("/", forceLoad: true);
-       
-   
+        Navigation.NavigateTo("/weather", forceLoad: true);
     }
 }

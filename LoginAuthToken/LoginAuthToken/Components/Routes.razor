@@ -6,7 +6,7 @@
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
-     <NotFound>
-        <RedirectToErrorPage ErrorCode="404" />
+    <NotFound>
+        <CatchError />
     </NotFound>
 </Router>

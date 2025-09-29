@@ -1,5 +1,7 @@
+using Blazored.LocalStorage;
 using LoginAuthToken;
 using LoginAuthToken.Components;
+using LoginAuthToken.LocalStorage;
 using LoginAuthToken.Server.Services;
 using LoginAuthToken.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -80,7 +82,16 @@ namespace LoginAuthtoken
             });
             builder.Services.AddSingleton<UserSessionService>();
 
+            builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddScoped<LocalStorageHelper>();
 
+            builder.Services.AddScoped(sp =>
+            {
+                return new HttpClient
+                {
+                    BaseAddress = new Uri("https://localhost:7086/") // URL de tu API
+                };
+            });
             var app = builder.Build();
 
 

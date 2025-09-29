@@ -33,14 +33,25 @@
         currentCount++;
     }
 
-  
 
-    protected override void OnInitialized()
+
+    protected override void OnParametersSet()
     {
-        // Solo comprobamos si está logado
-        IsAuthorized = UserSession.IsLoggedIn;
+        bool previousAuthorized = IsAuthorized;
+
+        if (!UserSession.IsLoggedIn)
+        {
+            IsAuthorized = false;
+        }
+        else
+        {
+            IsAuthorized = ip == UserSession.ClientIp;
+        }
+
+        // Forzamos el re-render si cambia el estado
+        if (previousAuthorized != IsAuthorized)
+        {
+            StateHasChanged();
+        }
     }
-
-
-
 }
