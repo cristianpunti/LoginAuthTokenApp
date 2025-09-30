@@ -1,31 +1,31 @@
-﻿@page "/counter"
+﻿﻿
+@page "/counter"
+
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using LoginAuthToken.Services
+@using LoginAuthToken.LocalStorage
 
 @inject UserSessionService UserSession
-
+@inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
 
-    @if (!IsAuthorized)
-    {
-        <ErrorPage ErrorCode="401" />
-    }
-    else
-    {
-        <h3>Counter</h3>
+@if (!IsAuthorized)
+{
+    <ErrorPage ErrorCode="401" />
+}
+else
+{
+    <h3>Counter</h3>
 
-        <p>Current count: @currentCount</p>
+    <p>Current count: @currentCount</p>
 
-        <div class="mb-3">
-            <button class="btn btn-primary me-2" @onclick="IncrementCount">Click me</button>
-        </div>
-    }
+    <div class="mb-3">
+        <button class="btn btn-primary me-2" @onclick="IncrementCount">Click me</button>
+    </div>
+}
 
 @code {
-    [Parameter] public string? ip { get; set; }
-
     private bool IsAuthorized;
-
     private int currentCount = 0;
 
     private void IncrementCount()
@@ -33,25 +33,19 @@
         currentCount++;
     }
 
-
-
-    protected override void OnParametersSet()
+    protected override async Task OnInitializedAsync()
     {
-        bool previousAuthorized = IsAuthorized;
+        // Leer sesión en memoria o desde LocalStorage
+        var clientIp = UserSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var token = UserSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
 
-        if (!UserSession.IsLoggedIn)
-        {
-            IsAuthorized = false;
-        }
-        else
-        {
-            IsAuthorized = ip == UserSession.ClientIp;
-        }
+        UserSession.ClientIp = clientIp;
+        UserSession.Token = token;
 
-        // Forzamos el re-render si cambia el estado
-        if (previousAuthorized != IsAuthorized)
-        {
-            StateHasChanged();
-        }
+        // Validación → basta con que haya IP + Token
+        IsAuthorized = !string.IsNullOrEmpty(clientIp)
+                       && !string.IsNullOrEmpty(token);
+
+        StateHasChanged();
     }
 }

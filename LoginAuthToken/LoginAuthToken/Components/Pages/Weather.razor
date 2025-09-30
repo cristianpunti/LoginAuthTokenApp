@@ -45,23 +45,23 @@
             <p class="text-danger mt-2">@LoginResult</p>
         }
 
-        @if (!string.IsNullOrEmpty(sessionService.Token))
+        @* @if (!string.IsNullOrEmpty(sessionService.Token))
         {
             <h2>Conectado correctamente!</h2>
             <p>Token recibido:</p>
             <textarea class="form-control" readonly rows="3">@sessionService.Token</textarea>
             <p>IP: @sessionService.ClientIp </p>
-        }
+        } *@
     </div>
 </div>
 @code {
-    private IpConfigViewModel LoginReq { get; set; } = new()
-    {
-        Ip = "192.168.1.10" // Valor por defecto para pruebas
-    };
+    private IpConfigViewModel LoginReq { get; set; } = new();
+    // {
+    //     Ip = "192.168.1.10" // Valor por defecto para pruebas
+    // };
 
     private string? LoginResult;
-    public string? Token { get; set; }
+    // public string? Token { get; set; }
     public string? ClientIp { get; set; }
     private string? errorMessage;
 
@@ -120,7 +120,7 @@
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 // API devolvió "ip not found"
-                LoginResult = $"IP no autorizada: {content}";
+                LoginResult = $"Http Error: {content}";
             }
             else
             {

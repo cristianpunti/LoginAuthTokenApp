@@ -1,4 +1,4 @@
-﻿@page "/home"
+﻿@page "/home/{ip}"
 @using LoginAuthToken.LocalStorage
 @using LoginAuthToken.Services
 
@@ -16,26 +16,16 @@ else
 {
     <div class="home-background"></div>
 
-
+   
 }
-@code {
 
+@code {
     [Parameter] public string? ip { get; set; }
     private bool IsAuthorized;
 
     protected override async Task OnParametersSetAsync()
     {
-
-        // Redirige según sesión
-        if (!string.IsNullOrEmpty(UserSession.ClientIp))
-        {
-            Navigation.NavigateTo($"/home/{UserSession.ClientIp}");
-        }
-        else
-        {
-            Navigation.NavigateTo("/weather");
-        }
-
+        await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas");
 
         // Leer sesión en memoria o LocalStorage
         var clientIp = UserSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
@@ -50,5 +40,5 @@ else
                        && ip?.Trim() == clientIp?.Trim();
 
         StateHasChanged(); // fuerza re-render para que ErrorPage aparezca si no autorizado
-    }
+    }   
 }

@@ -4,6 +4,7 @@
 @inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
 
+
 <button class="btn btn-danger rounded shadow-sm" @onclick="Logout">
                                 Logout
 </button>
@@ -11,13 +12,13 @@
 @code {
     private async Task Logout()
     {
-        // 🔹 Clear IP from session
         sessionService.ClientIp = null;
+        sessionService.Token = null;
 
-        // 🔹 Clear IP from localStorage
-        await localStorageHelper.RemoveItemAsync("LocalStorageIpKey");
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageIpKey);
+        await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageTokenKey);
 
-        // Navigate to login
         Navigation.NavigateTo("/weather", forceLoad: true);
     }
+
 }
