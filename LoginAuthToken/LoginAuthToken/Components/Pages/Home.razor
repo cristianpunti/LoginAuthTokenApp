@@ -18,37 +18,32 @@ else
 
 
 }
+
 @code {
-
-    [Parameter] public string? ip { get; set; }
     private bool IsAuthorized;
+    [Parameter] public string? ip { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender) return;
 
-        // Redirige según sesión
-        if (!string.IsNullOrEmpty(UserSession.ClientIp))
+        // Cargar sesión desde memoria o LocalStorage
+        var hasSession = await UserSession.LoadSessionAsync(localStorageHelper);
+
+        if (hasSession)
         {
+            // Redirige a /home/{ip} si hay sesión
             Navigation.NavigateTo($"/home/{UserSession.ClientIp}");
         }
         else
         {
-            Navigation.NavigateTo("/weather");
+            // Redirige a /home si no hay sesión
+            Navigation.NavigateTo("/home");
         }
+        
+        // Validar autorización
+        IsAuthorized = UserSession.IsAuthorized(ip);
 
-
-        // Leer sesión en memoria o LocalStorage
-        var clientIp = UserSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
-        var token = UserSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
-
-        UserSession.ClientIp = clientIp;
-        UserSession.Token = token;
-
-        // Validación
-        IsAuthorized = !string.IsNullOrEmpty(clientIp)
-                       && !string.IsNullOrEmpty(token)
-                       && ip?.Trim() == clientIp?.Trim();
-
-        StateHasChanged(); // fuerza re-render para que ErrorPage aparezca si no autorizado
+        StateHasChanged();
     }
 }

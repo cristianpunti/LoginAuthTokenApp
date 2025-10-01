@@ -25,20 +25,34 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas");
+        // Cargar sesión
+        await UserSession.LoadSessionAsync(localStorageHelper);
 
-        // Leer sesión en memoria o LocalStorage
-        var clientIp = UserSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
-        var token = UserSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+        if (string.IsNullOrEmpty(ip) && !string.IsNullOrEmpty(UserSession.ClientIp))
+        {
+            // Si no hay IP en la URL pero hay sesión → redirige automáticamente
+            Navigation.NavigateTo($"/home/{UserSession.ClientIp}", forceLoad: false);
+            return;
+        }
 
-        UserSession.ClientIp = clientIp;
-        UserSession.Token = token;
+        // Validar autorización
+        IsAuthorized = UserSession.IsAuthorized(ip);
 
-        // Validación
-        IsAuthorized = !string.IsNullOrEmpty(clientIp)
-                       && !string.IsNullOrEmpty(token)
-                       && ip?.Trim() == clientIp?.Trim();
+        StateHasChanged();
+    }
 
-        StateHasChanged(); // fuerza re-render para que ErrorPage aparezca si no autorizado
-    }   
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !IsAuthorized) return;
+
+        try
+        {
+            // Generar canvas Trianglify
+            await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error generando canvas Trianglify: " + ex.Message);
+        }
+    }
 }
