@@ -1,11 +1,11 @@
-using Blazored.LocalStorage;
+﻿using Blazored.LocalStorage;
 using LoginAuthToken;
 using LoginAuthToken.Components;
-using LoginAuthToken.LocalStorage;
-using LoginAuthToken.Server.Services;
-using LoginAuthToken.Services;
+using LoginAuthToken.Shared.Services;
+using LoginAuthToken.Shared.LocalStorage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using LoginAuthToken.Server.Services;
 
 namespace LoginAuthtoken
 {
@@ -31,6 +31,17 @@ namespace LoginAuthtoken
             // Crear la instancia de IpConfigService y registrarla
             var ipConfigService = new IpConfigService(xmlPath);
             builder.Services.AddSingleton<IpConfigService>(ipConfigService);
+
+            // 1️⃣ Añadir política de CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowBlazorClient",
+                    policy => policy
+                        .WithOrigins("https://localhost:7288") // la URL del cliente WebAssembly
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials());
+            });
 
             // Registrar controllers
             builder.Services.AddControllers(); // <--- OBLIGATORIO
@@ -59,7 +70,7 @@ namespace LoginAuthtoken
             builder.Services.AddScoped<AuthenticationStateProvider, PersistingRevalidatingAuthenticationStateProvider>();
 
 #if DEBUG
-            // Agregar consola y depuraci�n
+            // Agregar consola y depuración
             builder.Logging.AddDebug();
             builder.Logging.AddConsole();
 #endif
@@ -76,7 +87,7 @@ namespace LoginAuthtoken
             builder.Services.AddDistributedMemoryCache(); // Necesario para almacenar session en memoria
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // Tiempo que dura la sesi�n
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // Tiempo que dura la sesión
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
@@ -85,13 +96,22 @@ namespace LoginAuthtoken
             builder.Services.AddBlazoredLocalStorage();
             builder.Services.AddScoped<LocalStorageHelper>();
 
-            builder.Services.AddScoped(sp =>
+            //builder.Services.AddScoped(sp =>
+            //{
+            //    return new HttpClient
+            //    {
+            //        //BaseAddress = new Uri("https://localhost:7086/") // URL de tu API
+            //        BaseAddress = new Uri("https://iisauth-e3hkhka0hba2dea6.eastus-01.azurewebsites.net")
+            //    };
+            //});
+
+            // Named client pointing at the API host (base address = site root)
+            builder.Services.AddHttpClient("ExternalApi", client =>
             {
-                return new HttpClient
-                {
-                    BaseAddress = new Uri("https://localhost:7086/") // URL de tu API
-                };
+                client.BaseAddress = new Uri("https://iisauth-e3hkhka0hba2dea6.eastus-01.azurewebsites.net/");
+                client.Timeout = TimeSpan.FromSeconds(15);
             });
+
             var app = builder.Build();
 
 
@@ -113,6 +133,10 @@ namespace LoginAuthtoken
 
 
             app.UseRouting();
+
+           // 2️⃣ Aplicar CORS **después de UseRouting y antes de MapControllers**
+            app.UseCors("AllowBlazorClient");
+
 
             app.UseSession();
 

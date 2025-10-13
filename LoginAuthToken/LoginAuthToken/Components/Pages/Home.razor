@@ -1,49 +1,127 @@
 ﻿@page "/home"
-@using LoginAuthToken.LocalStorage
-@using LoginAuthToken.Services
+@using LoginAuthToken.Shared.Models
+@using LoginAuthToken.Shared.Services
+@using LoginAuthToken.Shared.LocalStorage
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@inject UserSessionService UserSession
+
+
+@inject UserSessionService userSession
 @inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
+@inject HttpClient Http
+@inject IHttpClientFactory ClientFactory
 @inject IJSRuntime JS
+@inject ILogger<Home> Logger
 
-@if (!IsAuthorized)
+@if (IsLoading)
 {
-    <ErrorPage ErrorCode="401" />
+}
+else if (!IsAuthorized || string.IsNullOrEmpty(userSession.Token))
+{
+    <ErrorPage ErrorCode="@ErrorCode" ApiDetail="@ApiDetail" />
 }
 else
 {
     <div class="home-background"></div>
-
-
 }
 
 @code {
-    private bool IsAuthorized;
-    [Parameter] public string? ip { get; set; }
+    private bool IsLoading = true;
+    private bool IsAuthorized = false;
+    private int ErrorCode = 0;
+    private string ApiDetail = string.Empty;
 
+    private HttpClient Api => ClientFactory.CreateClient("ExternalApi");
+
+    protected override async Task OnInitializedAsync()
+    {
+        var clientIp = userSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var token = userSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        if (string.IsNullOrEmpty(clientIp))
+        {
+            Navigation.NavigateTo("/weather", true);
+            StateHasChanged(); // opcional, asegura flush inmediato
+            return;
+        }
+
+        userSession.ClientIp = clientIp;
+
+
+        try
+        {
+            Api.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var response = await Api.PostAsJsonAsync("api/login", clientIp);
+
+            if (response.IsSuccessStatusCode)
+            {
+                IsAuthorized = true;
+                userSession.SetSession(clientIp, token!); // 👈 Notifica a MainLayout
+            } 
+            else
+                await HandleApiError(response);
+        }
+        catch (TaskCanceledException)
+        {
+            SetError(504, "Request timeout: API did not respond.");
+        }
+        catch (HttpRequestException)
+        {
+            SetError(504, "API unreachable or offline.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error in Home");
+            SetError(500, "Unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleApiError(HttpResponseMessage response)
+    {
+        var content = await response.Content.ReadAsStringAsync();
+        switch (response.StatusCode)
+        {
+            case System.Net.HttpStatusCode.Unauthorized:
+                SetError(401, string.IsNullOrWhiteSpace(content) ? "Unauthorized" : content.Trim());
+                break;
+            case System.Net.HttpStatusCode.NotFound:
+                SetError(404, string.IsNullOrWhiteSpace(content) ? "Not Found" : content.Trim());
+                break;
+            default:
+                SetError((int)response.StatusCode, string.IsNullOrWhiteSpace(content) ? "Unexpected error" : content.Trim());
+                break;
+        }
+    }
+
+    private void SetError(int code, string detail)
+    {
+        ErrorCode = code;
+        ApiDetail = detail;
+        IsAuthorized = false;
+        IsLoading = false;
+        StateHasChanged();
+    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        // Cargar sesión desde memoria o LocalStorage
-        var hasSession = await UserSession.LoadSessionAsync(localStorageHelper);
-
-        if (hasSession)
+        try 
+        { 
+            await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas"); 
+            Logger.LogInformation("Trianglify generated for IP: {Ip}", userSession.ClientIp);
+        } catch (Exception ex)
         {
-            // Redirige a /home/{ip} si hay sesión
-            Navigation.NavigateTo($"/home/{UserSession.ClientIp}");
-        }
-        else
-        {
-            // Redirige a /home si no hay sesión
-            Navigation.NavigateTo("/home");
-        }
-        
-        // Validar autorización
-        IsAuthorized = UserSession.IsAuthorized(ip);
+            Logger.LogError("Error generating Trianglify canvas: " + ex.Message); 
 
-        StateHasChanged();
+        }
+        finally 
+        { 
+            IsLoading = false;
+        } 
     }
 }

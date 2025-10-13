@@ -6,33 +6,8 @@
     animationFrameId: null,
     resizeHandler: null,
     baseColors: [
-        // 🔹 Azules (cuerpo principal) → con más peso (repetidos)
-        [25, 55, 109],   // Azul oscuro
-        [25, 55, 109],   // Repetido para más peso
-        [33, 97, 171],   // Azul intenso
-        [33, 97, 171],   // Repetido
-        [72, 133, 237],  // Azul medio
-        [72, 133, 237],  // Repetido
-        [135, 206, 250], // Azul celeste
-
-        // 🟢 Verdes (contraste)
-        [34, 139, 34],
-        [72, 160, 120],
-        [144, 238, 144],
-
-        // 🟡 Amarillos y dorados
-        [251, 176, 59],
-        [255, 215, 0],
-        [255, 239, 120],
-
-        // 🔴 Rojos y naranjas
-        [220, 74, 57],
-        [255, 87, 34],
-        [255, 140, 0],
-
-        // ⚪ Blancos y neutros
-        [240, 240, 240],
-        [200, 200, 200]
+        [160, 231, 229], // #A0E7E5 light blue
+        [51, 191, 168]   // #33BFA8 green
     ],
 
     /**

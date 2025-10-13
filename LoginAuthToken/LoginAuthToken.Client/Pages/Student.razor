@@ -1,0 +1,49 @@
+﻿@page "/student"
+@* @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+ *@
+@rendermode InteractiveAuto
+@using LoginAuthToken.Shared.Services
+@using LoginAuthToken.Shared.LocalStorage
+
+@inject UserSessionService userService
+@inject LocalStorageHelper localStorageHelper
+@inject NavigationManager Navigation
+@inject ILogger<Student> Logger
+
+@if (!IsLoading)
+{
+    <div class="home-background"></div>
+    <h2>
+        Welcome student with Ip: @userService.ClientIp!
+    </h2>
+}
+
+@code {
+    private bool IsLoading = true;
+    public string Ip { get; private set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Cargar datos de sesión desde memoria o localStorage
+            var token = userService.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+            var ip = userService.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+
+            // 🚀 Redirige de inmediato si no hay sesión
+            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(ip))
+            {
+                Navigation.NavigateTo("/weather", forceLoad: true);
+                return;
+            }
+
+            // Si está logado correctamente, renderiza el contenido
+            IsLoading = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error initializing Student page");
+            Navigation.NavigateTo("/weather", forceLoad: true);
+        }
+    }
+}

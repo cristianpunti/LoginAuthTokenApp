@@ -1,51 +1,113 @@
-﻿﻿
-@page "/counter"
+﻿@page "/counter"
+@using LoginAuthToken.Shared.Models
+@using LoginAuthToken.Shared.Services
+@using LoginAuthToken.Shared.LocalStorage
 
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
-@using LoginAuthToken.Services
-@using LoginAuthToken.LocalStorage
 
-@inject UserSessionService UserSession
-@inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
+@inject UserSessionService userSession
+@inject LocalStorageHelper localStorageHelper
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<Counter> Logger
 
-@if (!IsAuthorized)
+@if (IsLoading)
 {
-    <ErrorPage ErrorCode="401" />
+}
+else if (!IsAuthorized || string.IsNullOrEmpty(userSession.Token))
+{
+    <ErrorPage ErrorCode="@ErrorCode" ApiDetail="@ApiDetail" />
 }
 else
 {
     <h3>Counter</h3>
-
     <p>Current count: @currentCount</p>
-
-    <div class="mb-3">
-        <button class="btn btn-primary me-2" @onclick="IncrementCount">Click me</button>
-    </div>
+    <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
 }
 
 @code {
-    private bool IsAuthorized;
+    private bool IsLoading = true;
+    private bool IsAuthorized = false;
+    private int ErrorCode = 0;
+    private string ApiDetail = string.Empty;
     private int currentCount = 0;
 
-    private void IncrementCount()
-    {
-        currentCount++;
-    }
+    private HttpClient Api => ClientFactory.CreateClient("ExternalApi");
+
+    private void IncrementCount() => currentCount++;
 
     protected override async Task OnInitializedAsync()
     {
-        // Leer sesión en memoria o desde LocalStorage
-        var clientIp = UserSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
-        var token = UserSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+        var clientIp = userSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var token = userSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
 
-        UserSession.ClientIp = clientIp;
-        UserSession.Token = token;
+        if (string.IsNullOrEmpty(clientIp))
+        {
+            Navigation.NavigateTo("/weather", true);
+            return;
+        }
 
-        // Validación → basta con que haya IP + Token
-        IsAuthorized = !string.IsNullOrEmpty(clientIp)
-                       && !string.IsNullOrEmpty(token);
+        userSession.ClientIp = clientIp;
 
+        try
+        {
+            Api.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Api.PostAsJsonAsync("api/login", clientIp);
+
+            if (response.IsSuccessStatusCode)
+            {
+                IsAuthorized = true;
+                userSession.Token = token;
+                userSession.ApiOnline = true;
+            }
+            else
+            {
+                await HandleApiError(response);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            SetError(504, "Request timeout: API did not respond.");
+        }
+        catch (HttpRequestException)
+        {
+            SetError(504, "API unreachable or offline.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error in Counter");
+            SetError(500, "Unexpected error.");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task HandleApiError(HttpResponseMessage response)
+    {
+        var content = await response.Content.ReadAsStringAsync();
+        switch (response.StatusCode)
+        {
+            case System.Net.HttpStatusCode.Unauthorized:
+                SetError(401, string.IsNullOrWhiteSpace(content) ? "Unauthorized" : content.Trim());
+                break;
+            case System.Net.HttpStatusCode.NotFound:
+                SetError(404, string.IsNullOrWhiteSpace(content) ? "IP not found" : content.Trim());
+                break;
+            default:
+                SetError((int)response.StatusCode, string.IsNullOrWhiteSpace(content) ? "Unexpected error" : content.Trim());
+                break;
+        }
+    }
+
+    private void SetError(int code, string detail)
+    {
+        ErrorCode = code;
+        ApiDetail = detail;
+        IsAuthorized = false;
+        IsLoading = false;
         StateHasChanged();
     }
 }

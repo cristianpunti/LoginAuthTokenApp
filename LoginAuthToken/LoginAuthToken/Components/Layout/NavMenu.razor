@@ -1,5 +1,5 @@
-﻿@using LoginAuthToken.Services
-
+﻿@using LoginAuthToken.Shared.Services
+@using LoginAuthToken.Shared.LocalStorage
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 @inject NavigationManager Navigation
@@ -26,12 +26,11 @@
                 <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
             </NavLink>
         </div>
-
-    @*     <div class="nav-item px-3">
-            <NavLink class="nav-link" href="@($"/weather/{Ip}")">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@($"/student/{Ip}")">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Student
             </NavLink>
-        </div> *@
+        </div>
     </nav>
 </div>
 
@@ -49,7 +48,7 @@
 
             if (isLogged)
             {
-                Navigation.NavigateTo($"/home/{ip}", forceLoad: true);
+                Navigation.NavigateTo($"/home", forceLoad: true);
             }
             else
             {
