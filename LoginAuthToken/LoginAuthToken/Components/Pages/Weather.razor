@@ -43,16 +43,23 @@
 </div>
 
 @code {
+    [SupplyParameterFromForm]
     private IpConfigViewModel LoginReq { get; set; } = new();
     private string? LoginResult;
 
     private HttpClient Api => HttpClientFactory.CreateClient("ExternalApi");
 
-
     protected override async Task OnInitializedAsync()
     {
         var savedIp = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
         var savedToken = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        // Si ya había un mensaje de error de Home, mostrarlo
+        if (!string.IsNullOrEmpty(UserSession.LastErrorMessage))
+        {
+            LoginResult =  $"Http Error: 401 - {UserSession.LastErrorMessage}";
+            UserSession.LastErrorMessage = null;
+        }
 
         if (!string.IsNullOrEmpty(UserSession.ClientIp ?? savedIp) &&
             !string.IsNullOrEmpty(UserSession.Token ?? savedToken))
@@ -94,29 +101,20 @@
 
             if (response.IsSuccessStatusCode)
             {
-                var token = await response.Content.ReadAsStringAsync();
-
-                // Aquí asumimos que el contenido devuelto es tu token JWT
+                var token = content; // asumimos token JWT
                 UserSession.SetSession(LoginReq.Ip, token);
 
-
                 await localStorageHelper.SaveItemAsync(ProjectConstants.LocalStorageIpKey, LoginReq.Ip);
-                await localStorageHelper.SaveItemAsync(ProjectConstants.LocalStorageTokenKey, content);
+                await localStorageHelper.SaveItemAsync(ProjectConstants.LocalStorageTokenKey, token);
 
                 Logger.LogInformation("Login successful. IP: {Ip}", LoginReq.Ip);
                 Navigation.NavigateTo("/home", forceLoad: true);
             }
-            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                LoginResult = $"Http Error: 404 - {content.Trim()}";
-            }
-            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-            {
-                LoginResult = $"{content.Trim()}";
-            }
             else
             {
-                LoginResult = $"Unexpected error ({(int)response.StatusCode}): {content.Trim()}";
+                // El mensaje de error viene de la API (401, 404, etc.)
+                // Aquí combinamos el código HTTP con el mensaje de la API
+                LoginResult = $"Http Error: {(int)response.StatusCode} - {content.Trim()}";
             }
           }
     catch (TaskCanceledException)

@@ -1,4 +1,6 @@
 ﻿
+using LoginAuthToken.Shared.LocalStorage;
+
 namespace LoginAuthToken.Shared.Services
 {
     public class UserSessionService
@@ -6,6 +8,8 @@ namespace LoginAuthToken.Shared.Services
         private string? _clientIp;
         private string? _token;
         private bool _apiOnline;
+        public string? LastErrorMessage { get; set; }
+
 
         public event Action? OnStatusChanged;
 

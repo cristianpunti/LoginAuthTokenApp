@@ -6,6 +6,7 @@
 @inherits LayoutComponentBase
 
 @inject UserSessionService sessionService
+@inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
 @inject ILogger<MainLayout> Logger
 
@@ -86,9 +87,9 @@
         InvokeAsync(StateHasChanged);
     }
 
-    // public void Dispose()
-    // {
-    //     sessionService.OnStatusChanged -= HandleSessionChange;
-    // }
+    public void Dispose()
+    {
+        sessionService.OnStatusChanged -= HandleSessionChange;
+    }
 }
 

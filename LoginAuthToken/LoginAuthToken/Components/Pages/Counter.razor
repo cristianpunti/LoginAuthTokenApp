@@ -41,9 +41,23 @@ else
         var clientIp = userSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
         var token = userSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
 
-        if (string.IsNullOrEmpty(clientIp))
+        if (string.IsNullOrEmpty(clientIp) || string.IsNullOrEmpty(token))
         {
-            Navigation.NavigateTo("/weather", true);
+            try
+            {
+                var response = await Api.PostAsJsonAsync("api/login", "");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    userSession.LastErrorMessage = content.Trim(); // mensaje de la API
+                }
+            }
+            catch
+            {
+                userSession.LastErrorMessage = "Login API error";
+            }
+
+            Navigation.NavigateTo("/weather", forceLoad: true);
             return;
         }
 
@@ -94,7 +108,7 @@ else
                 SetError(401, string.IsNullOrWhiteSpace(content) ? "Unauthorized" : content.Trim());
                 break;
             case System.Net.HttpStatusCode.NotFound:
-                SetError(404, string.IsNullOrWhiteSpace(content) ? "IP not found" : content.Trim());
+                SetError(404, string.IsNullOrWhiteSpace(content) ? "Not Found" : content.Trim());
                 break;
             default:
                 SetError((int)response.StatusCode, string.IsNullOrWhiteSpace(content) ? "Unexpected error" : content.Trim());

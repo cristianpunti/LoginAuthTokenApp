@@ -4,21 +4,18 @@
 @inject LocalStorageHelper localStorageHelper
 @inject NavigationManager Navigation
 
-
 <button class="btn btn-danger rounded shadow-sm" @onclick="Logout">
-                                Logout
+    Logout
 </button>
 
 @code {
     private async Task Logout()
     {
-        sessionService.ClientIp = null;
-        sessionService.Token = null;
+        sessionService.ClearSession(); // Notifica a MainLayout u otros suscriptores
 
         await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageIpKey);
         await localStorageHelper.RemoveItemAsync(ProjectConstants.LocalStorageTokenKey);
 
         Navigation.NavigateTo("/weather", forceLoad: true);
     }
-
 }
