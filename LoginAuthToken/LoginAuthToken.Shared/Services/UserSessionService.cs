@@ -10,7 +10,9 @@ namespace LoginAuthToken.Shared.Services
         private bool _apiOnline;
         public string? LastErrorMessage { get; set; }
 
-
+        // 👇 Nueva propiedad para identificar el tipo de error (401, 404, etc.)
+        public int? LastErrorCode { get; set; }
+        
         public event Action? OnStatusChanged;
 
         public string? ClientIp

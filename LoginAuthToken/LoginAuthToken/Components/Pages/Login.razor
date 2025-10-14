@@ -1,115 +1,140 @@
 ﻿@page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@layout EmptyLayoutLogin
 
 @using System.Net.Http.Json
 @using LoginAuthToken.Client.Layout
 @using LoginAuthToken.Client.ViewModels
-@using System.Xml.Linq
+@using LoginAuthToken.Shared.Models
 @using LoginAuthToken.Shared.Services
-@using LoginAuthToken.Shared.LocalStorage 
-@using static LoginAuthToken.Client.ViewModels.LoginViewModel
+@using LoginAuthToken.Shared.LocalStorage
 
-@layout EmptyLayoutLogin
-
-@inject IJSRuntime JS
-@inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
-
+@inject IJSRuntime JS
+@inject UserSessionService UserSession
+@inject LocalStorageHelper localStorageHelper
+@inject ILogger<Weather> Logger
 
 <div id="animated-background"></div>
 
 <div class="login-container">
     <div class="login-card">
-        <h1 class="mb-3">Welcome!</h1>
-        <p>Enter your IP to connect to the project:</p>
+        <h1 class="mb-3">Welcome to Demo!</h1>
+        <p>Enter your IP:</p>
 
-
-        <EditForm Model="LoginReq" OnValidSubmit="HandleLogin" FormName="LoginForm">
+        <EditForm Model="LoginReq" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
             <div class="form-group mb-3">
-                <label for="ipInput" class="form-label">IP:</label>
-                <InputText id="ipInput" @bind-Value="LoginReq.Ip" class="form-control" placeholder="Ej: 192.168.1.10" />
+                <InputText @bind-Value="LoginReq.Ip" class="form-control" placeholder="e.g., 192.168.1.10" />
                 <ValidationMessage For="() => LoginReq.Ip" />
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Connect</button>
-
         </EditForm>
 
-        @if (!string.IsNullOrEmpty(errorMessage))
+        @if (!string.IsNullOrEmpty(LoginResult))
         {
-            <p class="text-danger mt-2">@errorMessage</p>
+            <p class="text-danger mt-2">@LoginResult</p>
         }
     </div>
 </div>
 
 @code {
     [SupplyParameterFromForm]
-    private IpConfig LoginReq { get; set; } = new();
+    private IpConfigViewModel LoginReq { get; set; } = new();
+    private string? LoginResult;
 
-    private string? errorMessage;
-    private bool _isBrowser;
-    private string? ipToStore;
+    private HttpClient Api => HttpClientFactory.CreateClient("ExternalApi");
 
-    public bool Valid { get; set; }
-    [Inject] private ILogger<Login> Logger { get; set; } = default!;
-    [Inject] private UserSessionService UserSession { get; set; } = default!;
+    protected override async Task OnInitializedAsync()
+    {
+        var savedIp = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var savedToken = await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        // Si ya había un mensaje de error de Home, mostrarlo
+        if (!string.IsNullOrEmpty(UserSession.LastErrorMessage))
+        {
+            if (UserSession.LastErrorCode == 404)
+                LoginResult = $"Http Error: 404 - {UserSession.LastErrorMessage}";
+            else
+                LoginResult = $"Http Error: 401 - {UserSession.LastErrorMessage}";
+
+            UserSession.LastErrorMessage = null;
+            UserSession.LastErrorCode = null;
+        }
+
+
+        if (!string.IsNullOrEmpty(UserSession.ClientIp ?? savedIp) &&
+            !string.IsNullOrEmpty(UserSession.Token ?? savedToken))
+        {
+            // Sesión activa → redirigir a Home automáticamente
+            Navigation.NavigateTo("/home", forceLoad: true);
+            return;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return; // Execute only on first render
-
+        if (!firstRender) return;
         try
         {
-
-            // 🔹 Initialize Trianglify background only on login page
-            await InvokeAsync(() =>
-                                 JS.InvokeVoidAsync("trianglifyHelper.generateCanvas")
-                             );
-            // 🔹 Optional: save IP to localStorage if pending
-            // if (!string.IsNullOrEmpty(ipToStore))
-            // {
-            //     await JS.InvokeVoidAsync("clientStorage.setIp", ipToStore);
-            //     Logger.LogInformation("[Login] IP saved to localStorage: " + ipToStore);
-            //     ipToStore = null; // Reset so it won't run again
-            // }
+            await JS.InvokeVoidAsync("trianglifyHelper.generateCanvas");
         }
         catch (Exception ex)
         {
-            Logger.LogError("Trianglify initialization error: " + ex.Message);
+            Logger.LogError("Trianglify error: {Message}", ex.Message);
         }
     }
 
     private async Task HandleLogin()
     {
+        LoginResult = null;
 
         if (string.IsNullOrWhiteSpace(LoginReq.Ip))
         {
-            errorMessage = "Debes introducir una IP válida.";
+            LoginResult = "You must enter a valid IP.";
             return;
         }
 
-        var response = await Http.PostAsJsonAsync("api/IpConfig/validate", new IpConfig { Ip = LoginReq.Ip });
-        var result = await response.Content.ReadFromJsonAsync<ValidateIpResultViewModel>();
-
-        if (result == null || !result.Valid)
+        try
         {
-            errorMessage = "IP no autorizada.";
-            return;
+            var payload = LoginReq.Ip;
+            var response = await Api.PostAsJsonAsync("api/login", payload);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var token = content; // asumimos token JWT
+                UserSession.SetSession(LoginReq.Ip, token);
+
+                await localStorageHelper.SaveItemAsync(ProjectConstants.LocalStorageIpKey, LoginReq.Ip);
+                await localStorageHelper.SaveItemAsync(ProjectConstants.LocalStorageTokenKey, token);
+
+                Logger.LogInformation("Login successful. IP: {Ip}", LoginReq.Ip);
+                Navigation.NavigateTo("/home", forceLoad: true);
+            }
+            else
+            {
+                // El mensaje de error viene de la API (401, 404, etc.)
+                // Aquí combinamos el código HTTP con el mensaje de la API
+              
+                LoginResult = $"Http Error: {(int)response.StatusCode} - {content.Trim()}";
+            }
         }
-
-        // Guardar en servicio local
-        UserSession.ClientIp = LoginReq.Ip;
-        Logger.LogInformation("IP guardada en UserSession: " + LoginReq.Ip);
-
-        // Guardar también en Session del servidor
-        await Http.PostAsJsonAsync("api/IpConfig/save", new IpConfig { Ip = LoginReq.Ip });
-
-        // Redirigir
-        await InvokeAsync(() => Navigation.NavigateTo($"/home/{LoginReq.Ip}"));
-       
-        
+        catch (TaskCanceledException)
+        {
+            LoginResult = "Request timeout: API did not respond.";
+        }
+        catch (HttpRequestException)
+        {
+            LoginResult = "API unreachable or offline.";
+        }
+        catch (Exception ex)
+        {
+            LoginResult = $"Unexpected error: {ex.Message}";
+        }
     }
 }

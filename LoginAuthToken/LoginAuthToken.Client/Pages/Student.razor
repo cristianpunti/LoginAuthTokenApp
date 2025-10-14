@@ -33,7 +33,7 @@
             // 🚀 Redirige de inmediato si no hay sesión
             if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(ip))
             {
-                Navigation.NavigateTo("/weather", forceLoad: true);
+                Navigation.NavigateTo("/", forceLoad: true);
                 return;
             }
 
@@ -43,7 +43,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error initializing Student page");
-            Navigation.NavigateTo("/weather", forceLoad: true);
+            Navigation.NavigateTo("/", forceLoad: true);
         }
     }
 }

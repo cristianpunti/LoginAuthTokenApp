@@ -52,13 +52,13 @@
             }
             else
             {
-                Navigation.NavigateTo("/weather", forceLoad: true);
+                Navigation.NavigateTo("/", forceLoad: true);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError($"Error en OnLogoClick: {ex.Message}");
-            Navigation.NavigateTo("/weather", forceLoad: true); // fallback
+            Navigation.NavigateTo("/", forceLoad: true); // fallback
         }
     }
 

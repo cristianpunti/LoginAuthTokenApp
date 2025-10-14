@@ -1,14 +1,42 @@
 ﻿@page "/{*route}"
+@using LoginAuthToken.Shared.Services
+@using LoginAuthToken.Shared.LocalStorage
+
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
 @inject NavigationManager Navigation
+@inject UserSessionService userSession
+@inject LocalStorageHelper localStorageHelper
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<CatchError> Logger
 
 @code {
     [Parameter] public string? Route { get; set; }
 
-    protected override async Task OnParametersSetAsync()
+    private HttpClient Api => ClientFactory.CreateClient("ExternalApi");
+
+    protected override async Task OnInitializedAsync()
     {
-        var currentUri = Navigation.ToAbsoluteUri(Navigation.Uri).AbsolutePath;
-        if (!currentUri.StartsWith("/error"))
+        var clientIp = userSession.ClientIp ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageIpKey);
+        var token = userSession.Token ?? await localStorageHelper.GetItemAsync(ProjectConstants.LocalStorageTokenKey);
+
+        bool isLoggedIn = !string.IsNullOrEmpty(clientIp) && !string.IsNullOrEmpty(token);
+
+        if (!isLoggedIn)
         {
+            if (!isLoggedIn)
+            {
+                // Usuario no logado → error 404 porque intentó acceder a una página inexistente
+                userSession.LastErrorCode = 404;
+                userSession.LastErrorMessage = "Ip not found";
+
+                Navigation.NavigateTo("/", forceLoad: true);
+                return;
+            }
+        }
+        else
+        {
+            // ✅ Usuario logado → redirigir a 404 con detalle de ruta no encontrada
             Navigation.NavigateTo($"/error/404?route={Uri.EscapeDataString(Route ?? "")}", forceLoad: true);
         }
 

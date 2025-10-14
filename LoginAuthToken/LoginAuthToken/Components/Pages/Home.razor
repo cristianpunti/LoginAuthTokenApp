@@ -53,10 +53,11 @@ else
             }
             catch
             {
+                userSession.LastErrorCode = 401;
                 userSession.LastErrorMessage = "Login API error";
             }
 
-            Navigation.NavigateTo("/weather", forceLoad: true);
+            Navigation.NavigateTo("/", forceLoad: true);
             return;
         }
 
